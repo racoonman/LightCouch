@@ -307,6 +307,111 @@ public abstract class CouchDbClientBase {
 		return true;
 	}
 	
+	public class ExecutionStats {
+		private Long total_keys_examined;
+		private Long total_docs_examined;
+		private Long total_quorum_docs_examined;
+		private Long results_returned;
+		private Double execution_time_ms;
+
+		public Long getTotal_keys_examined() {
+		    return total_keys_examined;
+		}
+
+		public void setTotal_keys_examined(Long total_keys_examined) {
+		    this.total_keys_examined = total_keys_examined;
+		}
+
+		public Long getTotal_docs_examined() {
+		    return total_docs_examined;
+		}
+
+		public void setTotal_docs_examined(Long total_docs_examined) {
+		    this.total_docs_examined = total_docs_examined;
+		}
+
+		public Long getTotal_quorum_docs_examined() {
+		    return total_quorum_docs_examined;
+		}
+
+		public void setTotal_quorum_docs_examined(Long total_quorum_docs_examined) {
+		    this.total_quorum_docs_examined = total_quorum_docs_examined;
+		}
+
+		public Long getResults_returned() {
+		    return results_returned;
+		}
+
+		public void setResults_returned(Long results_returned) {
+		    this.results_returned = results_returned;
+		}
+
+		public Double getExecution_time_ms() {
+		    return execution_time_ms;
+		}
+
+		public void setExecution_time_ms(Double execution_time_ms) {
+		    this.execution_time_ms = execution_time_ms;
+		}
+
+	    }
+
+	    public class FindResponse<T> {
+
+		private List<T> docs;
+		private ExecutionStats executionStats;
+
+		public List<T> getDocs() {
+		    return docs;
+		}
+
+		public void setDocs(List<T> docs) {
+		    this.docs = docs;
+		}
+
+		public ExecutionStats getExecutionStats() {
+		    return executionStats;
+		}
+
+		public void setExecutionStats(ExecutionStats executionStats) {
+		    this.executionStats = executionStats;
+		}
+
+	    }
+
+	    public <T> FindResponse<T> findDocsWithStats(String jsonQuery, Class<T> classOfT) {
+		assertNotEmpty(jsonQuery, "jsonQuery");
+		HttpResponse response = null;
+		try {
+		    response = post(buildUri(getDBUri()).path("_find").build(), jsonQuery);
+		    Reader reader = new InputStreamReader(getStream(response), Charsets.UTF_8);
+		    JsonObject jsonResponse = new JsonParser().parse(reader).getAsJsonObject();
+		    JsonArray jsonArray = jsonResponse.getAsJsonArray("docs");
+		    List<T> list = new ArrayList<T>();
+		    for (JsonElement jsonElem : jsonArray) {
+			JsonElement elem = jsonElem.getAsJsonObject();
+			T t = this.gson.fromJson(elem, classOfT);
+			list.add(t);
+		    }
+
+		    FindResponse findResponse = new FindResponse();
+		    findResponse.setDocs(list);
+
+		    JsonObject executionStatsJson = jsonResponse.getAsJsonObject("execution_stats");
+		    if (executionStatsJson != null) {
+			ExecutionStats executionStats = new ExecutionStats();
+			executionStats.setTotal_keys_examined(executionStatsJson.get("total_keys_examined").getAsLong());
+			executionStats.setTotal_docs_examined(executionStatsJson.get("total_docs_examined").getAsLong());
+			executionStats.setTotal_quorum_docs_examined(executionStatsJson.get("total_quorum_docs_examined").getAsLong());
+			executionStats.setResults_returned(executionStatsJson.get("results_returned").getAsLong());
+			executionStats.setExecution_time_ms(executionStatsJson.get("execution_time").getAsDouble());
+		    }
+		    return findResponse;
+		} finally {
+		    close(response);
+		}
+	    }
+	
 	/**
 	 * Saves an object in the database, using HTTP <tt>PUT</tt> request.
 	 * <p>If the object doesn't have an <code>_id</code> value, the code will assign a <code>UUID</code> as the document id.

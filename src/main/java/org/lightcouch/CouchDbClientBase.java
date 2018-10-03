@@ -404,7 +404,7 @@ public abstract class CouchDbClientBase {
 			executionStats.setTotal_docs_examined(executionStatsJson.get("total_docs_examined").getAsLong());
 			executionStats.setTotal_quorum_docs_examined(executionStatsJson.get("total_quorum_docs_examined").getAsLong());
 			executionStats.setResults_returned(executionStatsJson.get("results_returned").getAsLong());
-			executionStats.setExecution_time_ms(executionStatsJson.get("execution_time").getAsDouble());
+			executionStats.setExecution_time_ms(executionStatsJson.get("execution_time_ms").getAsDouble());
 		    }
 		    return findResponse;
 		} finally {
